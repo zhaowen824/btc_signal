@@ -1,4 +1,17 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+        // Flutter's Gradle plugin artifacts
+        maven { url 'https://storage.googleapis.com/download.flutter.io' }
+    }
+}
+
+rootProject.name = 'btc_signal'
 include ':app'
+// Force the ':app' project directory to the standard android/app location
+project(':app').projectDir = new File(rootProject.projectDir, 'app')
 
 // Load local.properties if present; in CI environments it may be absent.
 def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
