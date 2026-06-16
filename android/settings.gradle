@@ -18,14 +18,11 @@ def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
 def properties = new Properties()
 if (localPropertiesFile.exists()) {
   localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
-} else {
-  // Try to read Flutter SDK path from environment (set by CI or by flutter-action)
-  def envFlutter = System.getenv("FLUTTER_SDK") ?: System.getenv("FLUTTER_HOME")
-  if (envFlutter != null) {
-    properties.setProperty("flutter.sdk", envFlutter)
-  }
 }
 
-def flutterSdkPath = properties.getProperty("flutter.sdk")
-assert flutterSdkPath != null, "flutter.sdk not set in local.properties or FLUTTER_SDK/FLUTTER_HOME environment variables"
+// Look up Flutter SDK path from local.properties or common environment variables
+def flutterSdkPath = properties.getProperty("flutter.sdk") ?: System.getenv("FLUTTER_SDK") ?: System.getenv("FLUTTER_HOME") ?: System.getenv("FLUTTER_ROOT")
+if (flutterSdkPath == null) {
+  throw new GradleException("flutter.sdk not set in local.properties or FLUTTER_SDK/FLUTTER_HOME/FLUTTER_ROOT environment variables")
+}
 apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"

@@ -3,15 +3,14 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        // Flutter's gradle plugin is hosted on the Flutter storage Maven repo
+        // Flutter's artifact repository (needed for some plugin artifacts)
         maven { url 'https://storage.googleapis.com/download.flutter.io' }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.2.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        // Note: dev.flutter:flutter-gradle-plugin is not required here when using
-        // the app_plugin_loader applied from the Flutter SDK in settings.gradle.
-        // Removing the classpath entry avoids resolution errors in CI.
+        // Note: Flutter Gradle plugin is applied via the Flutter SDK (app_plugin_loader),
+        // so no dev.flutter:flutter-gradle-plugin classpath is required here.
     }
 }
 
