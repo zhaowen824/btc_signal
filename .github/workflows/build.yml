@@ -20,21 +20,47 @@ jobs:
 
       - name: 创建全新临时项目
         run: |
-          # 在 /tmp 下创建新项目
           cd /tmp
           flutter create --org com.example btc_signal_new
 
-      - name: 复制核心代码
+      - name: 复制核心代码并修复 AndroidManifest.xml
         run: |
-          # 复制 lib 和 pubspec.yaml
+          # 复制核心代码
           cp -r $GITHUB_WORKSPACE/lib /tmp/btc_signal_new/
           cp $GITHUB_WORKSPACE/pubspec.yaml /tmp/btc_signal_new/
 
-          # 手动添加权限（AndroidManifest.xml）
-          cd /tmp/btc_signal_new
-          echo '    <uses-permission android:name="android.permission.INTERNET" />' >> android/app/src/main/AndroidManifest.xml
-          echo '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' >> android/app/src/main/AndroidManifest.xml
-          echo '    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' >> android/app/src/main/AndroidManifest.xml
+          # 直接用完整内容覆盖 AndroidManifest.xml（确保有效）
+          cat > /tmp/btc_signal_new/android/app/src/main/AndroidManifest.xml << 'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+              <application
+                  android:label="btc_signal"
+                  android:icon="@mipmap/ic_launcher">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:launchMode="singleTop"
+                      android:theme="@style/LaunchTheme"
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                      android:hardwareAccelerated="true"
+                      android:windowSoftInputMode="adjustResize">
+                      <meta-data
+                          android:name="io.flutter.embedding.android.NormalTheme"
+                          android:resource="@style/NormalTheme" />
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+                  <meta-data
+                      android:name="flutterEmbedding"
+                      android:value="2" />
+              </application>
+          </manifest>
+          EOF
 
       - name: 构建 APK
         run: |
