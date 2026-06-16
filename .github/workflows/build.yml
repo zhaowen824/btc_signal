@@ -1,4 +1,4 @@
-name: 构建 APK（全新项目重建）
+name: 构建 APK（强制 Kotlin 版本）
 
 on:
   push:
@@ -15,56 +15,30 @@ jobs:
           flutter-version: '3.24.0'
           channel: 'stable'
 
-      - name: 检出当前仓库
+      - name: 克隆你的代码
         uses: actions/checkout@v4
 
-      - name: 创建全新临时项目
+      - name: 创建全新项目并强制 Kotlin 版本
         run: |
+          # 创建新项目
           cd /tmp
-          flutter create --org com.example btc_signal_new
+          flutter create --org com.example my_app
 
-      - name: 复制核心代码并修复 AndroidManifest.xml
-        run: |
           # 复制核心代码
-          cp -r $GITHUB_WORKSPACE/lib /tmp/btc_signal_new/
-          cp $GITHUB_WORKSPACE/pubspec.yaml /tmp/btc_signal_new/
+          cp -r $GITHUB_WORKSPACE/lib /tmp/my_app/
+          cp $GITHUB_WORKSPACE/pubspec.yaml /tmp/my_app/
 
-          # 直接用完整内容覆盖 AndroidManifest.xml（确保有效）
-          cat > /tmp/btc_signal_new/android/app/src/main/AndroidManifest.xml << 'EOF'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+          # 强制修改 Kotlin 版本
+          cd /tmp/my_app
+          sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.24"/' android/build.gradle
+          sed -i '/pluginManagement {/,/}/ s/plugins {/plugins {\n        id "org.jetbrains.kotlin.android" version "1.9.24" apply false/' android/settings.gradle
 
-              <application
-                  android:label="btc_signal"
-                  android:icon="@mipmap/ic_launcher">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTop"
-                      android:theme="@style/LaunchTheme"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-                      android:hardwareAccelerated="true"
-                      android:windowSoftInputMode="adjustResize">
-                      <meta-data
-                          android:name="io.flutter.embedding.android.NormalTheme"
-                          android:resource="@style/NormalTheme" />
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-                  </activity>
-                  <meta-data
-                      android:name="flutterEmbedding"
-                      android:value="2" />
-              </application>
-          </manifest>
-          EOF
+          # 清理 Gradle 缓存（关键）
+          rm -rf ~/.gradle/caches/
 
       - name: 构建 APK
         run: |
-          cd /tmp/btc_signal_new
+          cd /tmp/my_app
           flutter pub get
           flutter build apk --release
 
@@ -72,4 +46,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: /tmp/btc_signal_new/build/app/outputs/flutter-apk/app-release.apk
+          path: /tmp/my_app/build/app/outputs/flutter-apk/app-release.apk
