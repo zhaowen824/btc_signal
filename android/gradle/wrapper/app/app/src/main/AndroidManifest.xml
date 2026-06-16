@@ -22,6 +22,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- 这行是关键！ -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
