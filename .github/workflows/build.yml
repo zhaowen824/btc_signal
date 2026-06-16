@@ -18,9 +18,25 @@ jobs:
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
-      - run: flutter pub get
-      - run: flutter build apk --release
-      - uses: actions/upload-artifact@v4
+      - name: 重建标准 Android 目录
+        run: |
+          # 备份核心代码
+          mv lib lib_backup
+          mv pubspec.yaml pubspec_backup.yaml
+          # 删除旧 android 目录
+          rm -rf android
+          # 用 flutter create 生成全新的标准 android
+          flutter create .
+          # 恢复核心代码
+          rm -rf lib
+          mv lib_backup lib
+          mv pubspec_backup.yaml pubspec.yaml
+      - name: 获取依赖
+        run: flutter pub get
+      - name: 构建 APK
+        run: flutter build apk --release
+      - name: 上传 APK
+        uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: build/app/outputs/flutter-apk/app-release.apk
