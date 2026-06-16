@@ -31,6 +31,7 @@ android {
 
 flutter {
     source "../.."
+    usesFlutterEmbedding true   // 强制使用 V2 嵌入
 }
 
 dependencies {
