@@ -1,18 +1,18 @@
 include ':app'
 
+// Load local.properties if present; in CI environments it may be absent.
 def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
 def properties = new Properties()
-
 if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
+  localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
 } else {
-    def envFlutter = System.getenv("FLUTTER_SDK") ?: System.getenv("FLUTTER_HOME")
-    if (envFlutter != null) {
-        properties.setProperty("flutter.sdk", envFlutter)
-    }
+  // Try to read Flutter SDK path from environment (set by CI or by flutter-action)
+  def envFlutter = System.getenv("FLUTTER_SDK") ?: System.getenv("FLUTTER_HOME")
+  if (envFlutter != null) {
+    properties.setProperty("flutter.sdk", envFlutter)
+  }
 }
 
 def flutterSdkPath = properties.getProperty("flutter.sdk")
 assert flutterSdkPath != null, "flutter.sdk not set in local.properties or FLUTTER_SDK/FLUTTER_HOME environment variables"
-
 apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
