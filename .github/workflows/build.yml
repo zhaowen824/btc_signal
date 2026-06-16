@@ -15,36 +15,56 @@ jobs:
         run: |
           apt-get update
           apt-get install -y curl git unzip openjdk-17-jdk wget
+
       - name: 缓存 Flutter
         uses: actions/cache@v3
         with:
           path: /opt/flutter
           key: flutter-stable-linux
+
       - name: 安装 Flutter
         run: |
-          git clone https://github.com/flutter/flutter.git -b stable /opt/flutter
-          echo "$PATH:/opt/flutter/bin" >> $GITHUB_PATH
+          if [ ! -d "/opt/flutter" ]; then
+            git clone https://github.com/flutter/flutter.git -b stable /opt/flutter
+          fi
+          echo "/opt/flutter/bin" >> $GITHUB_PATH
+
       - name: 缓存 Android SDK
         uses: actions/cache@v3
         with:
           path: /opt/android-sdk
-          key: android-sdk-34-linux
-      - name: 安装 Android SDK
+          key: android-sdk-34
+
+      - name: 安装 Android SDK（修正路径）
         run: |
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip commandlinetools-linux-11076708_latest.zip -d /opt/android-sdk
-          yes | /opt/android-sdk/cmdline-tools/bin/sdkmanager --licenses
-          /opt/android-sdk/cmdline-tools/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          if [ ! -d "/opt/android-sdk" ]; then
+            mkdir -p /opt/android-sdk
+            cd /opt/android-sdk
+            wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+            unzip commandlinetools-linux-11076708_latest.zip -d /opt/android-sdk
+            # 关键修复：移动到 expected 位置 <sdk>/cmdline-tools/latest/
+            mkdir -p /opt/android-sdk/cmdline-tools
+            mv /opt/android-sdk/cmdline-tools /opt/android-sdk/cmdline-tools/latest
+            yes | /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+            /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          fi
+          echo "/opt/android-sdk/platform-tools" >> $GITHUB_PATH
+          echo "ANDROID_HOME=/opt/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=/opt/android-sdk" >> $GITHUB_ENV
+
       - name: 检出代码
         uses: actions/checkout@v4
+
       - name: 获取依赖
         run: |
           export PATH="$PATH:/opt/flutter/bin:/opt/android-sdk/platform-tools"
           flutter pub get
+
       - name: 构建 APK
         run: |
           export PATH="$PATH:/opt/flutter/bin:/opt/android-sdk/platform-tools"
           flutter build apk --release
+
       - name: 上传 APK
         uses: actions/upload-artifact@v4
         with:
