@@ -18,6 +18,10 @@ jobs:
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
+      - name: 彻底清理 Gradle 缓存
+        run: |
+          rm -rf ~/.gradle/caches/
+          rm -rf ~/.gradle/wrapper/dists/
       - name: 重建标准 Android 目录
         run: |
           mv lib lib_backup
@@ -27,8 +31,6 @@ jobs:
           rm -rf lib
           mv lib_backup lib
           mv pubspec_backup.yaml pubspec.yaml
-      - name: 清理 Gradle 缓存（修复 Kotlin 版本冲突）
-        run: rm -rf ~/.gradle/caches/
       - name: 获取依赖
         run: flutter pub get
       - name: 构建 APK
