@@ -1,7 +1,4 @@
-package com.example.btc_signal
+package com.example.btc_signal.legacy
 
-import io.flutter.embedding.android.FlutterActivity
-
-class MainActivity: FlutterActivity() {
-    // v2 embedding 不需要手动注册插件
-}
+// Legacy / disabled MainActivity to avoid duplicate Android module issues in CI
+// class MainActivity: FlutterActivity() { }
