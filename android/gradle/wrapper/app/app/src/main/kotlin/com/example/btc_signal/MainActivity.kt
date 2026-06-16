@@ -1,7 +1,2 @@
-package com.example.btc_signal
-
-import io.flutter.embedding.android.FlutterActivity
-
-class MainActivity: FlutterActivity() {
-    // v2 embedding 不需要手动注册插件
-}
+// Legacy nested MainActivity disabled to avoid duplicate Android modules being detected by CI.
+// The actual MainActivity is in android/app/src/main/kotlin/com/example/btc_signal/MainActivity.kt
