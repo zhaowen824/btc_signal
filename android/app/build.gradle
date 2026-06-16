@@ -3,8 +3,6 @@ plugins {
     id 'kotlin-android'
 }
 
-apply plugin: 'dev.flutter.flutter-gradle-plugin'
-
 android {
     namespace "com.example.btc_signal"
     compileSdk 34
