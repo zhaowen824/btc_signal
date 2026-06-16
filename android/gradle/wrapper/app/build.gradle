@@ -1,3 +1,0 @@
-// Legacy nested android module disabled to prevent Gradle from treating it as an Android project.
-// This file intentionally contains no Android Gradle configuration.
-// The real Android app is located at android/app.
