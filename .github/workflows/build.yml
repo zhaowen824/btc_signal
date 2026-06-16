@@ -1,4 +1,4 @@
-name: 构建 APK（Docker 环境 + 缓存）
+name: 构建 APK（全新项目重建）
 
 on:
   push:
@@ -8,51 +8,42 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: ubuntu:22.04
     steps:
-      - name: 安装基础依赖
-        run: |
-          apt-get update
-          apt-get install -y curl git unzip openjdk-17-jdk wget
-
-      - name: 设置 Java 环境
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
-      - name: 设置 Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: 缓存 Flutter
-        uses: actions/cache@v3
-        with:
-          path: /opt/flutter
-          key: flutter-stable-linux
-
       - name: 安装 Flutter
-        run: |
-          if [ ! -d "/opt/flutter" ]; then
-            git clone https://github.com/flutter/flutter.git -b stable /opt/flutter
-          fi
-          echo "/opt/flutter/bin" >> $GITHUB_PATH
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
 
-      - name: 检出代码
+      - name: 检出当前仓库
         uses: actions/checkout@v4
 
-      - name: 获取依赖
+      - name: 创建全新临时项目
         run: |
-          export PATH="$PATH:/opt/flutter/bin"
-          flutter pub get
+          # 在 /tmp 下创建新项目
+          cd /tmp
+          flutter create --org com.example btc_signal_new
+
+      - name: 复制核心代码
+        run: |
+          # 复制 lib 和 pubspec.yaml
+          cp -r $GITHUB_WORKSPACE/lib /tmp/btc_signal_new/
+          cp $GITHUB_WORKSPACE/pubspec.yaml /tmp/btc_signal_new/
+
+          # 手动添加权限（AndroidManifest.xml）
+          cd /tmp/btc_signal_new
+          echo '    <uses-permission android:name="android.permission.INTERNET" />' >> android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' >> android/app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' >> android/app/src/main/AndroidManifest.xml
 
       - name: 构建 APK
         run: |
-          export PATH="$PATH:/opt/flutter/bin"
+          cd /tmp/btc_signal_new
+          flutter pub get
           flutter build apk --release
 
       - name: 上传 APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: /tmp/btc_signal_new/build/app/outputs/flutter-apk/app-release.apk
