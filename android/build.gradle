@@ -9,7 +9,9 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.2.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'dev.flutter:flutter-gradle-plugin:1.0.0'
+        // Note: dev.flutter:flutter-gradle-plugin is not required here when using
+        // the app_plugin_loader applied from the Flutter SDK in settings.gradle.
+        // Removing the classpath entry avoids resolution errors in CI.
     }
 }
 
