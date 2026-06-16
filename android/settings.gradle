@@ -3,26 +3,41 @@ pluginManagement {
         gradlePluginPortal()
         google()
         mavenCentral()
-        // Flutter's Gradle plugin artifacts
+        maven { url 'https://storage.googleapis.com/download.flutter.io' }
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+    repositories {
+        google()
+        mavenCentral()
         maven { url 'https://storage.googleapis.com/download.flutter.io' }
     }
 }
 
 rootProject.name = 'btc_signal'
 include ':app'
-// Force the ':app' project directory to the standard android/app location
 project(':app').projectDir = new File(rootProject.projectDir, 'app')
 
-// Load local.properties if present; in CI environments it may be absent.
-def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
+def localPropertiesFile = new File(rootProject.projectDir, 'local.properties')
 def properties = new Properties()
 if (localPropertiesFile.exists()) {
-  localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
+    localPropertiesFile.withReader('UTF-8') { reader -> properties.load(reader) }
 }
 
-// Look up Flutter SDK path from local.properties or common environment variables
-def flutterSdkPath = properties.getProperty("flutter.sdk") ?: System.getenv("FLUTTER_SDK") ?: System.getenv("FLUTTER_HOME") ?: System.getenv("FLUTTER_ROOT")
+def flutterSdkPath = properties.getProperty('flutter.sdk')
 if (flutterSdkPath == null) {
-  throw new GradleException("flutter.sdk not set in local.properties or FLUTTER_SDK/FLUTTER_HOME/FLUTTER_ROOT environment variables")
+    flutterSdkPath = System.getenv('FLUTTER_SDK')
 }
+if (flutterSdkPath == null) {
+    flutterSdkPath = System.getenv('FLUTTER_HOME')
+}
+if (flutterSdkPath == null) {
+    flutterSdkPath = System.getenv('FLUTTER_ROOT')
+}
+if (flutterSdkPath == null) {
+    throw new GradleException('flutter.sdk not set in local.properties or FLUTTER_SDK/FLUTTER_HOME/FLUTTER_ROOT environment variables')
+}
+
 apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
