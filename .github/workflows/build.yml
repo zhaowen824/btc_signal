@@ -18,23 +18,122 @@ jobs:
       - name: 克隆你的代码
         uses: actions/checkout@v4
 
-      - name: 创建全新项目并强制 Kotlin 版本
+      - name: 清理 Gradle 缓存（强制）
+        run: rm -rf ~/.gradle/caches/
+
+      - name: 创建全新项目并复制核心代码
         run: |
-          # 创建新项目
           cd /tmp
           flutter create --org com.example my_app
-
-          # 复制核心代码
           cp -r $GITHUB_WORKSPACE/lib /tmp/my_app/
           cp $GITHUB_WORKSPACE/pubspec.yaml /tmp/my_app/
 
-          # 强制修改 Kotlin 版本
+      - name: 强制锁定 Kotlin 版本
+        run: |
           cd /tmp/my_app
-          sed -i 's/ext.kotlin_version = .*/ext.kotlin_version = "1.9.24"/' android/build.gradle
-          sed -i '/pluginManagement {/,/}/ s/plugins {/plugins {\n        id "org.jetbrains.kotlin.android" version "1.9.24" apply false/' android/settings.gradle
+          # 修改 settings.gradle
+          cat > android/settings.gradle << 'EOF'
+          pluginManagement {
+              repositories {
+                  gradlePluginPortal()
+                  google()
+                  mavenCentral()
+                  maven { url 'https://storage.googleapis.com/download.flutter.io' }
+              }
+              plugins {
+                  id 'org.jetbrains.kotlin.android' version '1.9.24' apply false
+                  id 'dev.flutter.flutter-gradle-plugin' version '1.0.0' apply false
+              }
+          }
+          include ':app'
+          def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
+          def properties = new Properties()
+          if (localPropertiesFile.exists()) {
+              localPropertiesFile.withReader('UTF-8') { reader -> properties.load(reader) }
+          }
+          def flutterSdkPath = properties.getProperty('flutter.sdk')
+          if (flutterSdkPath == null) {
+              flutterSdkPath = System.getenv('FLUTTER_SDK')
+          }
+          if (flutterSdkPath == null) {
+              flutterSdkPath = System.getenv('FLUTTER_HOME')
+          }
+          if (flutterSdkPath == null) {
+              flutterSdkPath = System.getenv('FLUTTER_ROOT')
+          }
+          if (flutterSdkPath == null) {
+              throw new GradleException('flutter.sdk not set')
+          }
+          apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
+          EOF
 
-          # 清理 Gradle 缓存（关键）
-          rm -rf ~/.gradle/caches/
+          # 修改 build.gradle
+          cat > android/build.gradle << 'EOF'
+          buildscript {
+              ext.kotlin_version = '1.9.24'
+              repositories {
+                  google()
+                  mavenCentral()
+                  maven { url 'https://storage.googleapis.com/download.flutter.io' }
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.2.0'
+                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+              }
+          }
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+                  maven { url 'https://storage.googleapis.com/download.flutter.io' }
+              }
+          }
+          rootProject.buildDir = 'build'
+          subprojects {
+              project.buildDir = "${rootProject.buildDir}/${project.name}"
+          }
+          subprojects {
+              project.evaluationDependsOn(':app')
+          }
+          tasks.register('clean', Delete) {
+              delete rootProject.buildDir
+          }
+          EOF
+
+          # 修改 app/build.gradle 使用 kotlin-android
+          cat > android/app/build.gradle << 'EOF'
+          plugins {
+              id 'com.android.application'
+              id 'kotlin-android'
+          }
+          android {
+              namespace "com.example.my_app"
+              compileSdk 34
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+                  coreLibraryDesugaringEnabled true
+              }
+              defaultConfig {
+                  applicationId "com.example.my_app"
+                  minSdk 23
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.debug
+                  }
+              }
+          }
+          flutter {
+              source "../.."
+          }
+          dependencies {
+              coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+          }
+          EOF
 
       - name: 构建 APK
         run: |
